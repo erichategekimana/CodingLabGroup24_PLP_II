@@ -1,0 +1,6 @@
+Database name:      defaultdb
+Host:  mysql-spt-codinglabgroup24-alustudent-6f2b.c.aivencloud.com
+Port: 13891
+User:   avnadmin
+Password:AVNS_u8Js2pj4YWqsyGRmsBr
+SSL mode: REQUIRED(Just make sure that it's taggled)
