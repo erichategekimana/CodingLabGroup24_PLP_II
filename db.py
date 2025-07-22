@@ -9,9 +9,9 @@ def get_db_connection():
             user="avnadmin",
             password="past password here",
             database="ydefaultdb",
-            port=13891 
+            port=13891
         )
-        return connection
+        return "connection successful"
     except Error as e:
         print()
         print(f"Database connection failed: {e}")

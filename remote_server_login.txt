@@ -4,3 +4,4 @@ Port: 13891
 User:   avnadmin
 Password:AVNS_u8Js2pj4YWqsyGRmsBr
 SSL mode: REQUIRED(Just make sure that it's taggled)
+Correct-Password: AVNS_IAwQ0c0X6Xm9tCXyiFJ
