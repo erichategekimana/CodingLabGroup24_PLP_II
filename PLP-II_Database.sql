@@ -4,58 +4,78 @@ and 4. messages.
       /\
      /  \
     /  ! \  *tiny change of these codes might result to the fail of entire database!*
-   -------- 
-
+   --------
 */
 
-CREATE Table users (
-    id int PRIMARY KEY AUTO_INCREMENT, -- id that will keep track user
-    user_name VARCHAR(150) not null,   -- full name
-    password VARCHAR(64) not NULL,
-    role ENUM(' teacher', 'student', 'parent') NOT NULL, -- this will allow only specified values
-                                                    -- ^and categorize users into those three category
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- <auto add timestamp
-);
-
-CREATE Table students (
-    id int PRIMARY KEY AUTO_INCREMENT,
-    user_id int NOT NULL, -- user id(from login(users) table)
-    parent_id int NOT NULL, -- also from login info(parent category)
-    student_names VARCHAR(150) NOT NULL,
-    study_level VARCHAR(2) NOT NULL, -- eg: "P6" for primary 6 or S3 or seconary 3, ...
-    year VARCHAR(4) NOT NULL,  -- eg: 2022, 2025, ...
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
--- create relationship(connection) between tables!  
-    Foreign Key (user_id) REFERENCES users(id) on DELETE CASCADE,
-    foreign key (parent_id) REFERENCES users(id)
-);
-
-CREATE TABLE progress (
-    id int PRIMARY KEY AUTO_INCREMENT,
-    student_id int NOT NULL,
-    subject VARCHAR(100) NOT NULL,
-    term ENUM('Term 1', 'Term 2', 'Term 3') NOT NULL, -- only specified key words are allowed
-    grades int NOT NULL,
-    teacher_comment varchar(200), -- it can be null(optional)
-    teacher_id int,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    -- create relationship(connection) between tables!
-    Foreign Key (student_id) REFERENCES students(id) ON DELETE CASCADE,
-    Foreign Key (teacher_id) REFERENCES users(id)
-);
+CREATE TABLE students (
+  id int(11) primary KEY NOT NULL AUTO_INCREMENT,
+  parent_id int(11) DEFAULT NULL,
+  instructor_id int(11) DEFAULT NULL,
+  student_names varchar(50) NOT NULL,
+  student_email varchar(100) NOT NULL UNIQUE,
+  password varchar(100) NOT NULL,
+  student_level varchar(50) NOT NULL,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  Foreign Key (parent_id) REFERENCES parents(parent_id) ON DELETE SET NULL ON UPDATE CASCADE,
+  Foreign Key (instructor_id) REFERENCES instructors(instructor_id) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
-/*
-message table should hold sender, receiver, msg text and timestamp.
-*/
-CREATE Table messages(
-    id int PRIMARY KEY AUTO_INCREMENT,
-    sender_id int NOT NULL,
-    receiver_id int NOT NULL,
-    student_id int NOT null,
-    text_body VARCHAR(250) NOT NULL,
-    done_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    Foreign Key (sender_id) REFERENCES users(id) on delete cascade,
-    Foreign Key (receiver_id) REFERENCES users(id) on delete cascade,
-    Foreign Key (student_id) REFERENCES students(id) on delete CASCADE
-);
+CREATE TABLE parents (
+  parent_id int(11) primary key NOT NULL AUTO_INCREMENT,
+  parent_name varchar(100) NOT NULL,
+  password varchar(128) NOT NULL,
+  parent_email varchar(100) NOT NULL UNIQUE,
+  parent_phone varchar(15) DEFAULT NULL,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+CREATE TABLE instructors (
+  instructor_id int(11) primary key NOT NULL AUTO_INCREMENT,
+  instructor_name varchar(100) NOT NULL,
+  password varchar(100) NOT NULL,
+  instructor_email varchar(100) NOT NULL UNIQUE,
+  instructor_phone varchar(15) DEFAULT NULL,
+  timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  specialization varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+CREATE TABLE subjects (
+  subject_id int(11) primary key NOT NULL AUTO_INCREMENT,
+  subject_name varchar(100) NOT NULL UNIQUE,
+  instructor_id int(11) NOT NULL,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  Foreign Key (instructor_id) REFERENCES instructors(instructor_id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+CREATE TABLE messages (
+  message_id int(11) primary key NOT NULL AUTO_INCREMENT,
+  sender_type ENUM('instructor', 'parent') NOT NULL,
+  sender_id int(11) NOT NULL,
+  receiver_type ENUM('instructor', 'parent') NOT NULL,
+  receiver_id int(11) NOT NULL,
+  student_id int(11) NOT NULL,
+  contents text NOT NULL,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  Foreign Key (sender_id) REFERENCES instructors(instructor_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  Foreign Key (receiver_id) REFERENCES parents(parent_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  Foreign Key (student_id) REFERENCES students(id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+CREATE Table grades (
+  grade_id int(11) primary key NOT NULL AUTO_INCREMENT,
+  student_id int(11) NOT NULL,
+  subject_id int(11) NOT NULL,
+  instructor_id int(11) NOT NULL,
+  term ENUM('Term 1', 'Term 2', 'Term 3') NOT NULL,
+  grade int(3) NOT NULL,
+  status VARCHAR(10) NOT NULL,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  Foreign Key (student_id) REFERENCES students(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  Foreign Key (subject_id) REFERENCES subjects(subject_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  Foreign Key (instructor_id) REFERENCES instructors(instructor_id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
