@@ -1,40 +1,51 @@
 # login.py
 import bcrypt
-from database import connection
+from db import get_connection
 
-def verify_login(role, table, id_label):
-    cursor = connection.cursor()
+def verify_login(role):
+    conn = get_connection()
+    if not conn:
+        print("Database connection failed.")
+        return
+
+    cursor = conn.cursor()
     email = input("Enter your email: ").strip()
     password = input("Enter your password: ").encode("utf-8")
 
-    query = f"SELECT * FROM {table} WHERE email = %s"
-    cursor.execute(query, (email,))
-    user = cursor.fetchone()
+    try:
+        if role == "student":
+            cursor.execute("SELECT id, student_names, student_email, password FROM students WHERE student_email = %s", (email,))
+        elif role == "teacher":
+            cursor.execute("SELECT instructor_id, instructor_name, instructor_email, password FROM instructors WHERE instructor_email = %s", (email,))
+        elif role == "parent":
+            cursor.execute("SELECT parent_id, parent_name, parent_email, password FROM parents WHERE parent_email = %s", (email,))
+        else:
+            print("Invalid role.")
+            return
 
-    if user:
-        hashed_password = user[3].encode("utf-8")
-        if bcrypt.checkpw(password, hashed_password):
-            with open("session.txt", "w") as file:
-                file.write(f"{id_label} id: {user[0]}")
+        user = cursor.fetchone()
+
+        if user and bcrypt.checkpw(password, user[3].encode('utf-8')):
+            with open("session.txt", "w") as f:
+                f.write(f"{role.capitalize()} ID: {user[0]}")
             print(f"{role.capitalize()} logged in successfully!")
             from dashboard import dashboard
             dashboard()
         else:
-            print("Incorrect password.")
-    else:
-        print(f"No {role} account found with that email.")
+            print("Incorrect email or password.")
 
-    cursor.close()
+    except Exception as e:
+        print("Login failed:", e)
+
+    finally:
+        cursor.close()
+        conn.close()
 
 def login():
     role = input("Are you a Teacher, Student or Parent?\n(Choose one role): ").lower().strip()
 
-    if role == "student":
-        verify_login(role, "student", "Student")
-    elif role == "teacher":
-        verify_login(role, "instructors", "Teacher")
-    elif role == "parent":
-        verify_login(role, "parents", "Parent")
+    if role in ["student", "teacher", "parent"]:
+        verify_login(role)
     else:
         print("Invalid role. Please choose either Student, Teacher, or Parent.")
 

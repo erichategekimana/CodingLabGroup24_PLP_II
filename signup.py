@@ -1,63 +1,75 @@
 # signup.py
 import bcrypt
-import sys
-from database import connection
-
-def hash_password(password):
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
-
-def get_common_inputs():
-    username = input("Enter your Full Name: ").strip()
-    email = input("Enter your Email: ").strip()
-    password = input("Enter your Password: ").strip()
-    return username, email, password
+from db import get_connection
 
 def signup():
-    cursor = connection.cursor()
-    choice = input("Are you a Teacher, Student or Parent?\n(Choose one role): ").lower().strip()
+    conn = get_connection()
+    if not conn:
+        print("Database connection failed.")
+        return
 
-    if choice == "student":
-        username, email, password = get_common_inputs()
-        hashed = hash_password(password)
-        classroom = input("Enter your classroom (e.g. Primary 6, Senior 3): ").strip()
-        query = "INSERT INTO student (name, email, password, classroom) VALUES (%s, %s, %s, %s)"
-        values = (username, email, hashed, classroom)
-        cursor.execute(query, values)
-        connection.commit()
-        print("Student account created successfully!")
+    cursor = conn.cursor()
 
-    elif choice == "teacher":
-        username, email, password = get_common_inputs()
-        hashed = hash_password(password)
-        subject = input("Enter your subject specialty (e.g. Science, BEL): ").strip()
-        query = "INSERT INTO instructors (name, email, password, subject) VALUES (%s, %s, %s, %s)"
-        values = (username, email, hashed, subject)
-        cursor.execute(query, values)
-        connection.commit()
-        print("Teacher account created successfully!")
+    role = input("Are you signing up as a Teacher, Student or Parent? ").strip().lower()
+    name = input("Enter your full name: ").strip()
+    email = input("Enter your email: ").strip()
+    password = input("Enter your password: ").encode("utf-8")
+    phone = input("Enter your phone number: ").strip()
 
-    elif choice == "parent":
-        username, email, password = get_common_inputs()
-        hashed = hash_password(password)
-        phone_number = input("Enter your phone number: ").strip()
-        query = "INSERT INTO parents (name, email, password, phone_number) VALUES (%s, %s, %s, %s)"
-        values = (username, email, hashed, phone_number)
-        cursor.execute(query, values)
-        connection.commit()
-        print("Parent account created successfully!")
+    hashed_password = bcrypt.hashpw(password, bcrypt.gensalt()).decode('utf-8')
 
-        proceed = input("Do you want to proceed to log in? (yes/no): ").lower().strip()
-        if proceed == 'yes':
-            from login import login
-            login()
+    try:
+        if role == "parent":
+            cursor.execute("""
+                INSERT INTO parents (parent_name, password, parent_email, parent_phone)
+                VALUES (%s, %s, %s, %s)
+            """, (name, hashed_password, email, phone))
+
+        elif role == "teacher":
+            specialization = input("Enter your specialization: ").strip()
+            cursor.execute("""
+                INSERT INTO instructors (instructor_name, password, instructor_email, instructor_phone, specialization)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (name, hashed_password, email, phone, specialization))
+
+        elif role == "student":
+            parent_email = input("Enter your parent's email: ").strip()
+            instructor_email = input("Enter your instructor's email: ").strip()
+
+            # Get Parent_id
+            cursor.execute("SELECT parent_id FROM parents WHERE parent_email = %s", (parent_email,))
+            parent_result = cursor.fetchone()
+            if not parent_result:
+                print("Parent email not found.")
+                return
+            parent_id = parent_result[0]
+
+            # Get Instructor_id
+            cursor.execute("SELECT instructor_id FROM instructors WHERE instructor_email = %s", (instructor_email,))
+            instructor_result = cursor.fetchone()
+            if not instructor_result:
+                print("Instructor email not found.")
+                return
+            instructor_id = instructor_result[0]
+            student_level = input("Enter your level/class: ").strip()
+
+            cursor.execute("""
+                INSERT INTO students (student_names, student_email, password, parent_id, instructor_id, student_level)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (name, email, hashed_password, parent_id, instructor_id, student_level))
         else:
-            print("Exiting. Have a nice day!")
-            sys.exit()
+            print("Invalid role. Please enter student, teacher or parent.")
+            return
 
-    else:
-        print(f"'{choice}' is not a valid role. Please enter either Student, Teacher or Parent.")
+        conn.commit()
+        print(f"{role.capitalize()} signed up successfully!")
 
-    cursor.close()
+    except Exception as e:
+        print("Signup failed:", e)
+
+    finally:
+        cursor.close()
+        conn.close()
 
 if __name__ == "__main__":
     signup()
