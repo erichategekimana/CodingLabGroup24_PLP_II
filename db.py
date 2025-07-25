@@ -5,7 +5,7 @@ def get_connection():
         connection = mysql.connector.connect(
             host="mysql-spt-codinglabgroup24-alustudent-6f2b.c.aivencloud.com",
             user="avnadmin",
-            password="AVNS_XMaaOLpAaCmHNErSMiD",
+            password="",
             database="new_spt_database",
             port = 13891
         )
