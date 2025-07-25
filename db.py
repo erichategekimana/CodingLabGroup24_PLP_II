@@ -6,7 +6,8 @@ def get_connection():
             host="mysql-spt-codinglabgroup24-alustudent-6f2b.c.aivencloud.com",
             user="avnadmin",
             password="AVNS_XMaaOLpAaCmHNErSMiD",
-            database="new_spt_database"
+            database="new_spt_database",
+            port = 13891
         )
         return connection
     except mysql.connector.Error as err:
@@ -49,7 +50,7 @@ def create_tables():
         # Students table
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS students (
-            id INT AUTO_INCREMENT PRIMARY KEY,
+            student_id INT AUTO_INCREMENT PRIMARY KEY,
             parent_id INT,
             instructor_id INT,
             student_names VARCHAR(100),
