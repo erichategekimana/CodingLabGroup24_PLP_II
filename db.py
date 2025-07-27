@@ -22,7 +22,7 @@ def create_tables():
     try:
         cursor = connection.cursor()
         connection.commit()
-        print("All tables created successfully.")
+        print("Database is connected successfully.")
     except mysql.connector.Error as err:
         print("Error during table creation:", err)
     finally:

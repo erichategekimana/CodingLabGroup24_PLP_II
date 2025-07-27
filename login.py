@@ -20,7 +20,7 @@ def verify_login(role):
 
     try:
         if role == "student":
-            cursor.execute("SELECT id, student_names, student_email, password FROM students WHERE student_email = %s", (email,))
+            cursor.execute("SELECT student_id, student_names, student_email, password FROM students WHERE student_email = %s", (email,))
         elif role == "teacher":
             cursor.execute("SELECT instructor_id, instructor_name, instructor_email, password FROM instructors WHERE instructor_email = %s", (email,))
         elif role == "parent":
@@ -38,8 +38,8 @@ def verify_login(role):
             print("==========================================================================="
                   "\n🙏🏿THANK YOU FOR REGISTERING TO OUR STUDENT PROGRESS TRACKER APP🙏🏿"
                   "\n===========================================================================")
-            from dashboard import dashboard
-            dashboard()
+            from Teacher import main
+            main()
         else:
             print("❌Incorrect email or password❌.")
 
