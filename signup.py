@@ -16,37 +16,60 @@ def signup():
             "\n===========================================================================", delay=0.019)
     conn = get_connection()
     if not conn:
-        print("Database connection failed.")
+        type_print("Database connection failed.")
         return
 
     cursor = conn.cursor()
+    loading_spinner("Loading")
     role = styled_input("Are you signing up as a Teacher, Student or Parent? ").strip().lower()
-    name = input("Enter your full name: ").strip()
-    email = input("Enter your email: ").strip()
-    password = input("Enter your password: ").encode("utf-8")
+    name = styled_input("Enter your full name: ").strip()
+    email = styled_input("Enter your email: ").strip()
+    password = styled_input("Enter your password: ").encode("utf-8")
     #phone = input("Enter your phone number: ").strip()
 
     hashed_password = bcrypt.hashpw(password, bcrypt.gensalt()).decode('utf-8')
 
     try:
         if role == "parent":
-            phone = input("Enter your phone number: ").strip()
+            phone = styled_input("Enter your phone number: ").strip()
             cursor.execute("""
                 INSERT INTO parents (parent_name, password, parent_email, parent_phone)
                 VALUES (%s, %s, %s, %s)
             """, (name, hashed_password, email, phone))
 
+            conn.commit()
+
+            #fetch parent_id of the newly inserted parent
+            cursor.execute("SELECT parent_id FROM parents WHERE parent_email = %s", (email,))
+            new_parent_id = cursor.fetchone()[0]
+            child_email = styled_input("Enter your child's email to link your accout: ").strip()
+
+            cursor.execute("""UPDATE students SET parent_id = %s
+                           WHERE student_email = %s AND parent_id IS NULL""", (new_parent_id, child_email))
+
         elif role == "teacher":
-            phone = input("Enter your phone number: ").strip()
-            specialization = input("Enter your specialization: ").strip()
+            phone = styled_input("Enter your phone number: ").strip()
+            specialization = styled_input("Enter your specialization: ").strip()
             cursor.execute("""
                 INSERT INTO instructors (instructor_name, password, instructor_email, instructor_phone, specialization)
                 VALUES (%s, %s, %s, %s, %s)
             """, (name, hashed_password, email, phone, specialization))
 
+            conn.commit()
+
+            #getting instructor_id
+            cursor.execute("SELECT instructor_id FROM instructors WHERE instructor_email = %s", (email,))
+            new_instructor_id = cursor.fetchone()[0]
+
+            #ask teacher what class they're teaching
+            level = styled_input("What class/level are you teaching? ").strip()
+
+            #update the students with this class have NULL instructor
+            cursor.execute("""UPDATE students SET instructor_id = %s
+                           WHERE student_level = %s AND instructor_id IS NULL""", (new_instructor_id, level))
         elif role == "student":
-            parent_email = input("Enter your parent's email: ").strip()
-            instructor_email = input("Enter your instructor's email: ").strip()
+            parent_email = styled_input("Enter your parent's email: ").strip()
+            instructor_email = styled_input("Enter your instructor's email: ").strip()
 
             # Get Parent_id
             cursor.execute("SELECT parent_id FROM parents WHERE parent_email = %s", (parent_email,))
@@ -63,23 +86,25 @@ def signup():
                 print("😔Instructor email not found😔.")
                 return"""
             instructor_id = instructor_result[0] if instructor_result else None
-            student_level = input("Enter your level/class: ").strip()
+            student_level = styled_input("Enter your level/class: ").strip()
 
             cursor.execute("""
                 INSERT INTO students (student_names, student_email, password, parent_id, instructor_id, student_level)
                 VALUES (%s, %s, %s, %s, %s, %s)
             """, (name, email, hashed_password, parent_id, instructor_id, student_level))
         else:
-            print("❌Invalid role. Please enter student, teacher or parent❌.")
+            type_print("❌Invalid role. Please enter student, teacher or parent❌.")
             return
 
         conn.commit()
-        print(f"{role.capitalize()} signed up successfully!")
-        print("==========================================================================="
+        loading_spinner("Please Wait")
+        type_print(f"{role.capitalize()} signed up successfully!")
+        type_print("==========================================================================="
               "\n🙏🏿THANK YOU FOR REGISTERING TO OUR STUDENT PROGRESS TRACKER APP🙏🏿"
               "\n===========================================================================")
-        choose = input("Do you want to proceed to log in? yes/no😁: ").lower().strip()
+        choose = styled_input("Do you want to proceed to log in? yes/no😁: ").lower().strip()
         if choose == 'yes':
+            loading_spinner("Alright")
             login()
         else:
             return

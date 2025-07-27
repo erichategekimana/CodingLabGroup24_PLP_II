@@ -1,22 +1,25 @@
 # login.py
 import bcrypt
 from db import get_connection
+from effects import type_print, loading_spinner, styled_input
 
 def verify_login(role):
+    loading_spinner("Initialising✍🏿")
     conn = get_connection()
-    welcome = input("Press Enter to continue:")
+    welcome = styled_input("Press Enter to continue:")
     if welcome == '':
-        print("==========================================================================="
+        type_print("==========================================================================="
               "\nWELCOME TO OUR STUDENT PROGRESS TRACKER APP😁"
               "\n==========================================================================="
               "\nLOGIN TO CONTINUE TO OUR APP✍"
               "\n===========================================================================")
     if not conn:
-        print("Database connection failed.")
+        type_print("Database connection failed.")
         return
+    loading_spinner("Loading👉🏿")
     cursor = conn.cursor()
-    email = input("Enter your email: ").strip()
-    password = input("Enter your password: ").encode("utf-8")
+    email = styled_input("Enter your email: ").strip()
+    password = styled_input("Enter your password: ").encode("utf-8")
 
     try:
         if role == "student":
@@ -26,37 +29,47 @@ def verify_login(role):
         elif role == "parent":
             cursor.execute("SELECT parent_id, parent_name, parent_email, password FROM parents WHERE parent_email = %s", (email,))
         else:
-            print("❌Invalid role❌.")
+            type_print("❌Invalid role❌.")
             return
 
         user = cursor.fetchone()
 
         if user and bcrypt.checkpw(password, user[3].encode('utf-8')):
+            loading_spinner("Checking😁")
             with open("session.txt", "w") as f:
-                f.write(f"{role.capitalize()} ID: {user[0]}")
-            print(f"😁{role.capitalize()} logged in successfully!😁")
-            print("==========================================================================="
+                f.write(f"{role.capitalize()} name: {user[1]}")
+            type_print(f"😁{role.capitalize()} logged in successfully!😁")
+            type_print("==========================================================================="
                   "\n🙏🏿THANK YOU FOR REGISTERING TO OUR STUDENT PROGRESS TRACKER APP🙏🏿"
                   "\n===========================================================================")
-            from Teacher import main
-            main()
+            if role == "teacher":
+                from solomon import main as teacher_dashboard
+                teacher_dashboard()
+            elif role == "student":
+                from andrew import student_dashboard
+                student_dashboard(user[0], user[1], user[2])
+            elif role == "parent":
+                from ange import main as parent_dashboard
+                parent_dashboard()
+            #main()
         else:
-            print("❌Incorrect email or password❌.")
+            type_print("❌Incorrect email or password❌.")
 
     except Exception as e:
-        print("❌Login failed:", e,"❌")
+        type_print("❌Login failed:", e,"❌")
 
     finally:
         cursor.close()
         conn.close()
 
 def login():
-    role = input("Are you a Teacher, Student or Parent?\n(Choose one role): ").lower().strip()
+    loading_spinner("Initialising😁")
+    role = styled_input("Are you a Teacher, Student or Parent?\n(Choose one role): ").lower().strip()
 
     if role in ["student", "teacher", "parent"]:
         verify_login(role)
     else:
-        print("❌Invalid role. Please choose either Student, Teacher, or Parent❌.")
+        type_print("❌Invalid role. Please choose either Student, Teacher, or Parent❌.")
 
 if __name__ == "__main__":
     login()

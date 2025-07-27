@@ -3,16 +3,27 @@ import sys
 import time
 import itertools
 from colorama import Fore, Style, init
+init(autoreset=True)
 
 # Initialize colorama
 init(autoreset=True)
 
-def type_print(text, delay=0.03, color=None):
+def type_print(text, delay=0.03, color="default"):
     """Print text one character at a time, like typewriter."""
-    if color:
-        text = getattr(Fore, color.upper(), "") + text + Style.RESET_ALL
+    color_codes = {
+        "default": "",
+        "red": Fore.RED,
+        "green": Fore.GREEN,
+        "yellow": Fore.YELLOW,
+        "blue": Fore.BLUE,
+        "magenta": Fore.MAGENTA,
+        "cyan": Fore.CYAN,
+        "white": Fore.WHITE,
+    }
+
+    color_code = color_codes.get(color.lower(), "")
     for char in text:
-        sys.stdout.write(char)
+        sys.stdout.write(f"{color_code}{char}{Style.RESET_ALL}")
         sys.stdout.flush()
         time.sleep(delay)
     print()

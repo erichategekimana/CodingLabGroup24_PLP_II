@@ -1,7 +1,9 @@
 import mysql.connector
+import bcrypt
 from db import get_connection
 from db import create_tables
 from datetime import datetime
+from effects import type_print, loading_spinner, styled_input
 
 # Add new student record
 def add_student_record(instructor_id):
@@ -10,44 +12,45 @@ def add_student_record(instructor_id):
         conn = get_connection()
         cursor = conn.cursor()
         from datetime import datetime
-        print("\n --- Add Student Grade ---")
-        is_new = input("Is this a new student? (yes/no): ").strip().lower()
+        type_print("\n --- Add Student Grade ---")
+        is_new = styled_input("Is this a new student? (yes/no): ").strip().lower()
 
         if is_new == 'yes':
             # Add new student
-            print("\n--- Add New Student Record ---".upper())
-            student_names = input("Student Name: ").strip() # Validate student name input
+            type_print("\n--- Add New Student Record ---".upper())
+            student_names = styled_input("Student Name: ").strip() # Validate student name input
             if not student_names:
-                print("Error: Student name cannot be empty.")
+                type_print("Error: Student name cannot be empty.")
                 return
-            student_email = input("Student Email: ")
-            password = input("Student password: ")
-            student_level = input("Student Level: ")
+            student_email = styled_input("Student Email: ")
+            password = styled_input("Student password: ").encode("utf-8")
+            hashed_password = bcrypt.hashpw(password, bcrypt.gensalt()).decode('utf-8')
+            student_level = styled_input("Student Level: ")
 
             cursor.execute(''' INSERT INTO students (student_names, student_email, password, student_level, instructor_id)
-                        VALUES (%s, %s, %s, %s, %s)''', (student_names, student_email, password, student_level, instructor_id))
+                        VALUES (%s, %s, %s, %s, %s)''', (student_names, student_email, hashed_password, student_level, instructor_id))
             conn.commit()
-            print("New Student Added")
+            type_print("New Student Added")
 
         else:
             # Use existing student
-            student_email = input("Enter the student email: ").strip()
+            student_email = styled_input("Enter the student email: ").strip()
 
             # Geting his/her id (in both cases)
         cursor.execute("SELECT student_id, student_names FROM students WHERE student_email = %s", (student_email,))
         result = cursor.fetchone()
 
         if not result:
-            print(" Student not found. Please add them first.")
+            type_print(" Student not found. Please add them first.")
             return
         student_id = result[0] if result else None
         student_names = result[1] if result else None
 
         # SUBJECT
 
-        subject = input("Subject: ").strip().lower()
+        subject = styled_input("Subject: ").strip().lower()
         if not subject:
-            print("Error: Subject cannot be empty.")
+            type_print("Error: Subject cannot be empty.")
             return
         # checking if the subject already exists
         cursor.execute('SELECT subject_id FROM subjects WHERE subject_name = %s AND instructor_id = %s', (subject, instructor_id))
@@ -61,26 +64,26 @@ def add_student_record(instructor_id):
                            (subject, instructor_id))
             conn.commit()
             subject_id = cursor.lastrowid
-            print("Subject added.")
+            type_print("Subject added.")
 
         # Add grade
     # Validate score input
-        term = input("Enter term (Term 1, Term 2, Term 3): ").strip()
+        term = styled_input("Enter term (Term 1, Term 2, Term 3): ").strip()
         while True:
             try:
-                score = int(input("Score (0-100): "))
+                score = int(styled_input("Score (0-100): "))
                 if 0 <= score <= 100:
                     break
-                print("Error: Score must be between 0 and 100.")
+                type_print("Error: Score must be between 0 and 100.")
             except ValueError:
-                print("Error: Please enter a valid number.")
+                type_print("Error: Please enter a valid number.")
     # Get current date
         #date = datetime.now().strftime("%Y-%m-%d")
         status = "Pass" if score >= 50 else "Fail"
         # Preventing duplicate grade for same subject/term
         cursor.execute(''' SELECT * FROM grades WHERE student_id = %s AND subject_id = %s AND term = %s''', (student_id, subject_id, term))
         if cursor.fetchone():
-            print("Grade for this subject and term already exists.")
+            type_print("Grade for this subject and term already exists.")
             return
 
         # INSERT GRADE
@@ -91,13 +94,13 @@ def add_student_record(instructor_id):
         conn.commit()
         cursor.close()
         conn.close()
-        print(f"Added {student_names}'s {subject} score!")
+        type_print(f"Added {student_names}'s {subject} score!")
     except mysql.connector.Error as err:
-        print(f"Error adding student: {err}")
+        type_print(f"Error adding student: {err}")
 
 # View all records
 def view_records(instructor_id):
-    print("\n--- View All Records ---".upper())
+    type_print("\n--- View All Records ---".upper())
     # Check if there are any records to view
     try:
         conn = get_connection()
@@ -112,21 +115,21 @@ def view_records(instructor_id):
 
 
         if not records:
-            print("\nNo records found.")
+            type_print("\nNo records found.")
             return
 # Print all records
-        print("\n--- All Records ---")
-        print("\n" + "=" * 110)
-        print(" Student Grades Overview".center(110))
-        print("=" * 110)
-        print(f"{'Student Name': <25} {'Email':<30} {'Subject':<20} {'Term':<10} {'Status':<10}")
-        print("-" * 110)
+        type_print("\n--- All Records ---")
+        type_print("\n" + "=" * 110)
+        type_print(" Student Grades Overview".center(110))
+        type_print("=" * 110)
+        type_print(f"{'Student Name': <25} {'Email':<30} {'Subject':<20} {'Term':<10} {'Status':<10}")
+        type_print("-" * 110)
         for name, email, subject, term, grade, status in records:
-            print(f"{name:<25} {email:<30} {subject:<20} {term:<10} {str(grade) + '%':<8} {status:<10}")
-        print("=" * 110)
+            type_print(f"{name:<25} {email:<30} {subject:<20} {term:<10} {str(grade) + '%':<8} {status:<10}")
+        type_print("=" * 110)
 
     except mysql.connector.Error as err:
-        print(f"Error viewing records: {err}")
+        type_print(f"Error viewing records: {err}")
     finally:
         cursor.close()
         conn.close()
@@ -153,37 +156,37 @@ def progress_report(instructor_id):
 
 # Analyze data and print report
         if not data:
-            print("\nNo records to analyze.")
+            type_print("\nNo records to analyze.")
             return
 # Check if averages are empty
         if not averages:
-            print("\nNo subject averages available.")
+            type_print("\nNo subject averages available.")
             return
-        print("\n" + "=" * 110)
-        print("Progress Report".center(110))
-        print("\n" + "=" * 110)
-        print(f"{'Student':<30} {'Subject':<50} {'Score':<10} {'Status':<20}")
-        print("-" * 110)
+        type_print("\n" + "=" * 110)
+        type_print("Progress Report".center(110))
+        type_print("\n" + "=" * 110)
+        type_print(f"{'Student':<30} {'Subject':<50} {'Score':<10} {'Status':<20}")
+        type_print("-" * 110)
         for name, subject, score in data:
             status = "🟢 Excellent" if score >= 70 else "🔴 Needs Help"
-            print(f"{name:<30} {subject:<40} {str(score) + '%':<10} {status:<20}")
+            type_print(f"{name:<30} {subject:<40} {str(score) + '%':<10} {status:<20}")
 
-        print("\n" + "=" * 110)
-        print("Subject Averages".center(110))
-        print("-" * 110)
+        type_print("\n" + "=" * 110)
+        type_print("Subject Averages".center(110))
+        type_print("-" * 110)
         for subject, avg in averages:
-            print(f"{subject:<50}: {avg:.1f}%")
+            type_print(f"{subject:<50}: {avg:.1f}%")
     except mysql.connector.Error as err:
-        print(f"Error generating progress report: {err}")
+        type_print(f"Error generating progress report: {err}")
     finally:
         cursor.close()
         conn.close()
 # Search parent and send message
 def search_message_parent(instructor_id):
-    print("\n--- Send Message to Parent ---")
-    student_name = input("Enter Student's Name: ").strip()
+    type_print("\n--- Send Message to Parent ---")
+    student_name = styled_input("Enter Student's Name: ").strip()
     if not student_name:
-        print("Error: Student name cannot be empty.")
+        type_print("Error: Student name cannot be empty.")
         return
 
     try:
@@ -194,14 +197,14 @@ def search_message_parent(instructor_id):
         cursor.execute("SELECT student_id, parent_id FROM students WHERE student_names = %s", (student_name,))
         student_data = cursor.fetchone()
         if not student_data:
-            print("Student not found.")
+            type_print("Student not found.")
             return
 
         student_id, parent_id = student_data
 
-        message = input("Enter Message: ").strip()
+        message = styled_input("Enter Message: ").strip()
         if not message:
-            print("Error: Message cannot be empty.")
+            type_print("Error: Message cannot be empty.")
             return
 
         cursor.execute("""
@@ -220,10 +223,10 @@ def search_message_parent(instructor_id):
         cursor.close()
         conn.close()
 
-        print(f"Message sent to Parent ID {parent_id} for Student '{student_name}'.")
+        type_print(f"Message sent to Parent ID {parent_id} for Student '{student_name}'.")
 
     except mysql.connector.Error as err:
-        print(f"Error sending message: {err}")
+        type_print(f"Error sending message: {err}")
 
 def view_parent_responses():
     # Check if there are any parent responses to view
@@ -236,34 +239,34 @@ def view_parent_responses():
         conn.close()
         # Check if there are any responses
         if not responses:
-            print("\nNo parent responses yet.")
+            type_print("\nNo parent responses yet.")
             return
 
-        print("\n--- Parent Responses ---")
+        type_print("\n--- Parent Responses ---")
         for row in responses:
-            print(f"{row[1]} responded on {row[3]}: {row[2]}")
+            type_print(f"{row[1]} responded on {row[3]}: {row[2]}")
     except mysql.connector.Error as err:
-        print(f"Error viewing parent responses: {err}")
+        type_print(f"Error viewing parent responses: {err}")
         return
 # Teacher dashboard for managing student records and communication
 def teacher_dashboard():
     instructor_id = 1
     # Initialize database
     create_tables()
-    print("\nWelcome to the Teacher Dashboard!")
+    type_print("\nWelcome to the Teacher Dashboard!")
     # Main loop for dashboard menu
     while True:
-        print("\n" + "="*35)
-        print(" TEACHER DASHBOARD - ADMIN MENU")
-        print("="*35)
-        print("1. Add New Student Record")
-        print("2. View All Records")
-        print("3. Generate Progress Report")
-        print("4. Search Parent and Send Message")
-        print("5. View Parent Responses")
-        print("6. Logout")
+        type_print("\n" + "="*35)
+        type_print(" TEACHER DASHBOARD - ADMIN MENU")
+        type_print("="*35)
+        type_print("1. Add New Student Record")
+        type_print("2. View All Records")
+        type_print("3. Generate Progress Report")
+        type_print("4. Search Parent and Send Message")
+        type_print("5. View Parent Responses")
+        type_print("6. Logout")
         # Get user choice
-        choice = input("\nSelect option (1-6): ").strip()
+        choice = styled_input("\nSelect option (1-6): ").strip()
         if choice == "1":
             add_student_record(instructor_id)
         elif choice == "2":
@@ -275,10 +278,10 @@ def teacher_dashboard():
         elif choice == "5":
             view_parent_responses()
         elif choice == "6":
-            print("Logging out...")
+            type_print("Logging out...")
             break
         else:
-            print("Invalid option. Try again.")
+            type_print("Invalid option. Try again.")
 # Main function to initialize database and start dashboard
 def main():
     # Ensure the database is initialized before starting the dashboard
@@ -286,7 +289,7 @@ def main():
         create_tables()
         teacher_dashboard()
     except Exception as e:
-        print(f"Application error: {e}")
+        type_print(f"Application error: {e}")
 # Ensure the script runs only if executed directly
 if __name__ == "__main__":
     main()
