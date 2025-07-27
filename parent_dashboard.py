@@ -8,11 +8,22 @@ console = Console()
 # Send message from parent to instructor
 
 
-def send_message(parent_id, instructor_id, message):
+def send_message(parent_id, instructor_id, contents):
     cursor = conn.cursor()
+    # Get student_id for this parent
     cursor.execute(
-        "INSERT INTO messages (sender_type, sender_id, receiver_type, receiver_id, message) VALUES (%s,%s,%s,%s,%s)",
-        ('parent', parent_id, 'instructor', instructor_id, message)
+        "SELECT student_id FROM parents WHERE parent_id = %s", (parent_id,))
+    result = cursor.fetchone()
+
+    if not result:
+        console.print("❌ Student not found for this parent.", style="bold red")
+        return
+
+    student_id = result[0]
+
+    cursor.execute(
+        "INSERT INTO messages (sender_type, sender_id, receiver_type, receiver_id,student_id,contents) VALUES (%s,%s,%s,%s,%s,%s)",
+        ('parent', parent_id, 'instructor', instructor_id, student_id, contents)
     )
     conn.commit()
     cursor.close()
@@ -39,16 +50,17 @@ def dashboard(parent_id):
                    """)
 
         if option == '1':
-            cursor.execute("""
+            query = """
                 SELECT s.student_names, s.student_level, sub.subject_name, g.term, g.grade, g.status,
                        i.instructor_name, i.instructor_phone, i.instructor_id
                 FROM parents p
                 INNER JOIN students s ON p.student_id = s.student_id
-                INNER JOIN grades g ON s.student_id = g.student_id
+                INNER JOIN grades g ON g.student_id = s.student_id
                 INNER JOIN subjects sub ON g.subject_id = sub.subject_id
                 INNER JOIN instructors i ON s.instructor_id = i.instructor_id
                 WHERE p.parent_id = %s
-            """, (parent_id,))
+            """
+            cursor.execute(query, (parent_id,))
             results = cursor.fetchall()
 
             if not results:
@@ -56,9 +68,7 @@ def dashboard(parent_id):
                     "⚠️ No Progress Found for your child!", style="bold red")
             else:
                 console.print(
-                    "\n📊 [bold underline] Student Progress Dashboard [/bold underline]",
-                    style="blue"
-                )
+                    "\n📊 [bold underline] Student Progress Dashboard [/bold underline]", style="blue")
                 table = Table(title="📚 Child Academic Progress",
                               header_style="bold magenta")
                 table.add_column("Student Name", style="cyan")
@@ -73,8 +83,8 @@ def dashboard(parent_id):
                 subject_option = {}
 
                 for student_name, student_level, subject_name, term, grade, status, instructor_name, instructor_phone, instructor_id in results:
-                    table.add_row(student_name, student_level, subject_name,
-                                  term, str(grade), status, instructor_name, instructor_phone)
+                    table.add_row(student_name, student_level, subject_name, term, str(
+                        grade), status, instructor_name, instructor_phone)
                     subject_option[subject_name.lower()] = (
                         instructor_name, instructor_id)
 
@@ -84,7 +94,7 @@ def dashboard(parent_id):
         elif option == '2':
             if not subject_option:
                 console.print(
-                    "⚠️ Please view progress report first to get subjects.", style="bold red")
+                    "⚠️  Please view progress report first to get subjects.", style="bold red")
                 continue
 
             console.print("Available Subjects to Chat:")
@@ -106,7 +116,7 @@ def dashboard(parent_id):
                 f"\n📖 [bold cyan] Chat History with {instructor_name} [/bold cyan]")
 
             cursor.execute("""
-                SELECT sender_type, message, timestamp FROM messages
+                SELECT sender_type, contents, timestamp FROM messages
                 WHERE (sender_type = 'parent' AND sender_id = %s AND receiver_type = 'instructor' AND receiver_id = %s)
                    OR (sender_type = 'instructor' AND sender_id = %s AND receiver_type = 'parent' AND receiver_id = %s)
                 ORDER BY timestamp ASC
@@ -116,10 +126,10 @@ def dashboard(parent_id):
             if not messages:
                 console.print("💬 No previous messages yet.\n")
             else:
-                for sender_type, content, timestamp in messages:
+                for sender_type, contents, timestamp in messages:
                     sender = "🧑‍🏫 Instructor" if sender_type == 'instructor' else "👪 You"
                     console.print(
-                        f"[{timestamp}] [bold] {sender}: [/bold] {content}")
+                        f"[{timestamp}] [bold] {sender}: [/bold] {contents}")
 
             new_msg = console.input(
                 f"Write a new message to {instructor_name} (or type 'cancel'): ").strip()
@@ -135,5 +145,7 @@ def dashboard(parent_id):
                 "❌ Invalid choice. Please Enter 1, 2 or 3.", style="bold red")
 
 
-console.print(
-    "\n\n\n[bold green]======================THANK YOU 😊 ====================[/bold green]")
+# Run the dashboard with a specific parent_id
+if __name__ == "__main__":
+    console.print(
+        "\n\n\n[bold green]======================THANK YOU 😊 ====================[/bold green]")
