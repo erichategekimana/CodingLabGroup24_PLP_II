@@ -13,7 +13,7 @@ def get_connection():
     except mysql.connector.Error as err:
         print("Database connection failed:", err)
         return None
-k
+
 def create_tables():
     connection = get_connection()
     if connection is None:
