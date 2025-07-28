@@ -6,7 +6,7 @@ def landing():
     loading_spinner("Connected")
     type_print("")
     type_print("=" * 50)
-    type_print(" STUDENT PROGRESS TRACKER ", delay=0.05)
+    type_print(" STUDENT PROGRESS TRACKER ".center(50), delay=0.05)
     print("=" * 50)
     print("1. Login")
     print("2. Signup")
