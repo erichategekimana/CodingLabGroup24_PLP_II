@@ -9,11 +9,11 @@ def signup():
     loading_spinner("Initialising")
     welcome = input("Press Enter to continue:")
     if welcome == '':
-        print("==========================================================================="
-            "\nWELCOME TO OUR STUDENT PROGRESS TRACKER APP😁"
-            "\n==========================================================================="
-            "\nSIGNUP TO CONTINUE TO OUR APP✍"
-            "\n===========================================================================")
+        print("=" * 70)
+        print( "WELCOME TO OUR STUDENT PROGRESS APPLICATION TRACKER".center(70))
+        print("*" * 70)
+        print("SIGNUP TO CONTINUE TO STUDENT PROGRESS TRACKER DASHBOARD".center(70))
+        print("=" * 70)
     conn = get_connection()
     if not conn:
         type_print("Database connection failed.")
@@ -85,7 +85,7 @@ def signup():
             cursor.execute("SELECT parent_id FROM parents WHERE parent_email = %s", (parent_email,))
             parent_result = cursor.fetchone()
             """if not parent_result:
-                print("😔Parent email not found😔.")
+                print("Parent email not found.")
                 return"""
             parent_id = parent_result[0] if parent_result else None
 
@@ -93,7 +93,7 @@ def signup():
             cursor.execute("SELECT instructor_id FROM instructors WHERE instructor_email = %s", (instructor_email,))
             instructor_result = cursor.fetchone()
             """if not instructor_result:
-                print("😔Instructor email not found😔.")
+                print("Instructor email not found.")
                 return"""
             instructor_id = instructor_result[0] if instructor_result else None
             student_level = styled_input("Enter your level/class: ").strip()
@@ -103,16 +103,16 @@ def signup():
                 VALUES (%s, %s, %s, %s, %s, %s)
             """, (name, email, hashed_password, parent_id, instructor_id, student_level))
         else:
-            type_print("❌Invalid role. Please enter student, teacher or parent❌.")
+            type_print("Invalid role. Please enter student, teacher or parent.")
             return
 
         conn.commit()
         loading_spinner("Please Wait")
         type_print(f"{role.capitalize()} signed up successfully!")
-        print("==========================================================================="
-              "\n🙏🏿THANK YOU FOR LOGGING INTO OUR STUDENT PROGRESS TRACKER APP🙏🏿"
-              "\n===========================================================================")
-        choose = styled_input("Do you want to proceed to log in? yes/no😁: ").lower().strip()
+        print("=" * 75)
+        print("THANK YOU FOR LOGGING INTO OUR STUDENT PROGRESS APPLICATION TRACKER".center(75))
+        print("=" * 75)
+        choose = styled_input("Do you want to proceed to log in? yes/no: ").lower().strip()
         if choose == 'yes':
             loading_spinner("Alright")
             login()

@@ -8,11 +8,11 @@ def verify_login(role):
     conn = get_connection()
     welcome = styled_input("Press Enter to continue:")
     if welcome == '':
-        print("==========================================================================="
-              "\nWELCOME TO OUR STUDENT PROGRESS TRACKER APP😁"
-              "\n==========================================================================="
-              "\nLOGIN TO CONTINUE TO OUR APP✍"
-              "\n===========================================================================")
+        print("=" * 70)
+        print("WELCOME TO OUR STUDENT PROGRESS TRACKER APP")
+        print("=" * 70)
+        print("LOGIN TO CONTINUE TO OUR APP".centre(70))
+        print("=" * 70)
     if not conn:
         type_print("Database connection failed.")
         return
@@ -29,19 +29,19 @@ def verify_login(role):
         elif role == "parent":
             cursor.execute("SELECT parent_id, parent_name, parent_email, password FROM parents WHERE parent_email = %s", (email,))
         else:
-            type_print("❌Invalid role❌.")
+            type_print("Invalid role.")
             return
 
         user = cursor.fetchone()
 
         if user and bcrypt.checkpw(password, user[3].encode('utf-8')):
-            loading_spinner("Checking😁")
+            loading_spinner("Checking")
             with open("session.txt", "w") as f:
                 f.write(f"{role.capitalize()} name: {user[1]}")
-            type_print(f"😁{role.capitalize()} logged in successfully!😁")
-            print("==========================================================================="
-                  "\n🙏🏿THANK YOU FOR REGISTERING TO OUR STUDENT PROGRESS TRACKER APP🙏🏿"
-                  "\n===========================================================================")
+            type_print(f"{role.capitalize()} logged in successfully!")
+            print("=" * 75)
+            print("THANK YOU FOR REGISTERING TO OUR STUDENT PROGRESS APPLICATION TRACKER APP".center(75))
+            print("=" * 75)
             if role == "teacher":
                 from solomon import teacher_dashboard
                 teacher_dashboard(user[0], user[1])
@@ -53,23 +53,23 @@ def verify_login(role):
                 dashboard(user[0])
             #main()
         else:
-            type_print("❌Incorrect email or password❌.")
+            type_print("Incorrect email or password.")
 
     except Exception as e:
-        type_print(f"❌Login failed:, {e} ❌")
+        type_print(f"Login failed:, {e} ")
 
     finally:
         cursor.close()
         conn.close()
 
 def login():
-    loading_spinner("Initialising😁")
+    loading_spinner("Initialising")
     role = styled_input("Are you a Teacher, Student or Parent?\n(Choose one role): ").lower().strip()
 
     if role in ["student", "teacher", "parent"]:
         verify_login(role)
     else:
-        type_print("❌Invalid role. Please choose either Student, Teacher, or Parent❌.")
+        type_print("Invalid role. Please choose either Student, Teacher, or Parent.")
 
 if __name__ == "__main__":
     login()
