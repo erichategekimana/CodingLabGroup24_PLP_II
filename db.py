@@ -1,4 +1,5 @@
 import mysql.connector
+from effects import loading_spinner, type_print
 
 def get_connection():
     try:
@@ -22,7 +23,8 @@ def create_tables():
     try:
         cursor = connection.cursor()
         connection.commit()
-        print("Database is connected successfully.")
+        loading_spinner("Analysing")
+        type_print("Database is connected successfully.")
     except mysql.connector.Error as err:
         print("Error during table creation:", err)
     finally:

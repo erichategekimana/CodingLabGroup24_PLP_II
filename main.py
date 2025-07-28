@@ -3,6 +3,9 @@ from signup import signup
 from effects import type_print, loading_spinner
 
 def landing():
+    loading_spinner("Connected")
+    type_print("")
+    type_print("=" * 50)
     type_print(" STUDENT PROGRESS TRACKER ", delay=0.05)
     print("=" * 50)
     print("1. Login")

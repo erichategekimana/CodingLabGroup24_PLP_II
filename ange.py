@@ -21,7 +21,7 @@ def send_message(parent_id, instructor_id, contents):
     result = cursor.fetchone()
 
     if not result:
-        console.print("❌ Student not found for this parent.", style="bold red")
+        console.print("Student not found for this parent.", style="bold red")
         return
 
     student_id = result[0]
@@ -32,7 +32,7 @@ def send_message(parent_id, instructor_id, contents):
     )
     conn.commit()
     cursor.close()
-    console.print("✅ Message sent successfully!", style="green")
+    console.print("Message sent successfully!", style="green")
 
 # Dashboard
 
@@ -41,7 +41,7 @@ def dashboard(parent_id):
     conn = get_connection()
     cursor = conn.cursor()
     console.print(
-        "\n\n===============[bold underline] 😊 Welcome To Our Dashboard 😊 [/bold underline] ===============",
+        "\n\n===============[bold underline]  Welcome To Our Dashboard [/bold underline] ===============",
         style="bold green"
     )
 
@@ -49,9 +49,9 @@ def dashboard(parent_id):
 
     while True:
         option = console.input("""\nPlease select an option:\n
-                 [bold]1. View My Child's Progress Report 📊[/bold] \n
-                 [bold]2. Chat with Instructor 💬[/bold]\n
-                 [bold]3. Logout 🚪[/bold]\n
+                 [bold]1. View My Child's Progress Report [/bold] \n
+                 [bold]2. Chat with Instructor [/bold]\n
+                 [bold]3. Logout [/bold]\n
                  [bold] Enter your Choice:[/bold]
                    """)
 
@@ -71,11 +71,11 @@ def dashboard(parent_id):
 
             if not results:
                 console.print(
-                    "⚠️ No Progress Found for your child!", style="bold red")
+                    " No Progress Found for your child!", style="bold red")
             else:
                 console.print(
-                    "\n📊 [bold underline] Student Progress Dashboard [/bold underline]", style="blue")
-                table = Table(title="📚 Child Academic Progress",
+                    "\n [bold underline] Student Progress Dashboard [/bold underline]", style="blue")
+                table = Table(title=" Child Academic Progress",
                               header_style="bold magenta")
                 table.add_column("Student Name", style="cyan")
                 table.add_column("Student Level", style="green")
@@ -100,7 +100,7 @@ def dashboard(parent_id):
         elif option == '2':
             if not subject_option:
                 console.print(
-                    "⚠️  Please view progress report first to get subjects.", style="bold red")
+                    "  Please view progress report first to get subjects.", style="bold red")
                 continue
 
             console.print("Available Subjects to Chat:")
@@ -113,7 +113,7 @@ def dashboard(parent_id):
                 continue
 
             if choice not in subject_option:
-                console.print("❌ Subject not found.", style="bold red")
+                console.print(" Subject not found.", style="bold red")
                 continue
 
             instructor_name, instructor_id = subject_option[choice]
@@ -130,10 +130,10 @@ def dashboard(parent_id):
             messages = cursor.fetchall()
 
             if not messages:
-                console.print("💬 No previous messages yet.\n")
+                console.print(" No previous messages yet.\n")
             else:
                 for sender_type, contents, timestamp in messages:
-                    sender = "🧑‍🏫 Instructor" if sender_type == 'instructor' else "👪 You"
+                    sender = " Instructor" if sender_type == 'instructor' else " You"
                     console.print(
                         f"[{timestamp}] [bold] {sender}: [/bold] {contents}")
 
@@ -143,15 +143,15 @@ def dashboard(parent_id):
                 send_message(parent_id, instructor_id, new_msg)
 
         elif option == '3':
-            console.print("👋 Logging out. Goodbye!", style="bold green")
+            console.print(" Logging out. Goodbye!", style="bold green")
             sys.exit()
 
         else:
             console.print(
-                "❌ Invalid choice. Please Enter 1, 2 or 3.", style="bold red")
+                " Invalid choice. Please Enter 1, 2 or 3.", style="bold red")
 
 
 # Run the dashboard with a specific parent_id
 if __name__ == "__main__":
     console.print(
-        "\n\n\n[bold green]======================THANK YOU 😊 ====================[/bold green]")
+        "\n\n\n[bold green]======================THANK YOU  ====================[/bold green]")

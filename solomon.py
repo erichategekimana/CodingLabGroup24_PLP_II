@@ -252,7 +252,7 @@ def view_parent_instructor_messages(parent_id, instructor_id, instructor_name):
         messages = cursor.fetchall()
 
         if not messages:
-            console.print("💬 No previous messages yet.\n")
+            console.print(" No previous messages yet.\n")
         else:
             console.print("\n[bold green]--- Message History ---[/bold green]")
             for sender_type, contents, timestamp in messages:
@@ -354,9 +354,9 @@ def login_instructor():
                 type_print(f"\nWelcome back, {instructor_name}!")
                 return instructor_id, instructor_name
             else:
-                type_print("❌ Incorrect password.")
+                type_print("Incorrect password.")
         else:
-            type_print("❌ Instructor not found.")
+            type_print(" Instructor not found.")
 
     except mysql.connector.Error as err:
         type_print(f"Login error: {err}")
