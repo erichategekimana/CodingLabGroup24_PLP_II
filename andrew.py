@@ -2,6 +2,8 @@ import os
 import mysql.connector
 from db import get_connection
 
+# Function to display the student dashboard and handle user actions
+
 def student_dashboard(student_id, student_names, student_email):
     """Display the student dashboard menu and handle user actions."""
     while True:

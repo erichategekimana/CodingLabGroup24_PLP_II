@@ -3,23 +3,28 @@ import bcrypt
 from db import get_connection
 from effects import type_print, loading_spinner, styled_input
 
+# Function to verify login credentials based on user role
+# and redirect to the appropriate dashboard
+
 def verify_login(role):
-    loading_spinner("Initialising✍🏿")
+    loading_spinner("Initialising")
     conn = get_connection()
     welcome = styled_input("Press Enter to continue:")
     if welcome == '':
         print("=" * 70)
-        print("WELCOME TO OUR STUDENT PROGRESS TRACKER APP")
+        print("WELCOME TO OUR STUDENT PROGRESS TRACKER APP".center(70))
         print("=" * 70)
-        print("LOGIN TO CONTINUE TO OUR APP".centre(70))
+        print("LOGIN TO CONTINUE TO OUR APP".center(70))
         print("=" * 70)
     if not conn:
         type_print("Database connection failed.")
         return
-    loading_spinner("Loading👉🏿")
+    loading_spinner("Loading")
     cursor = conn.cursor()
     email = styled_input("Enter your email: ").strip()
     password = styled_input("Enter your password: ").encode("utf-8")
+
+    # Role-based login logic
 
     try:
         if role == "student":
@@ -34,6 +39,7 @@ def verify_login(role):
 
         user = cursor.fetchone()
 
+        # Check if user exists and verify password
         if user and bcrypt.checkpw(password, user[3].encode('utf-8')):
             loading_spinner("Checking")
             with open("session.txt", "w") as f:

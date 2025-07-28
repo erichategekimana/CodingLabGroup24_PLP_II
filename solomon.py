@@ -256,7 +256,7 @@ def view_parent_instructor_messages(parent_id, instructor_id, instructor_name):
         else:
             console.print("\n[bold green]--- Message History ---[/bold green]")
             for sender_type, contents, timestamp in messages:
-                sender = "🧑‍🏫 Instructor" if sender_type == 'instructor' else "👪 Parent"
+                sender = " Instructor" if sender_type == 'instructor' else " Parent"
                 console.print(f"[{timestamp}] [bold]{sender}:[/bold] {contents}")
 
         cursor.close()

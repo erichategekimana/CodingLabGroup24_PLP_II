@@ -1,10 +1,11 @@
-# signup.py
+# Connecting to the database and importing needed libraries
 import bcrypt
 from db import get_connection
 from effects import type_print, loading_spinner, styled_input
 from login import login
 
-
+# Function to handle Dashboard functionality
+# Signup function to register new users
 def signup():
     loading_spinner("Initialising")
     welcome = input("Press Enter to continue:")
@@ -29,7 +30,10 @@ def signup():
 
     hashed_password = bcrypt.hashpw(password, bcrypt.gensalt()).decode('utf-8')
 
+    # Role-based signup logic
+
     try:
+        # Parent signup
         if role == "parent":
             phone = styled_input("Enter your phone number: ").strip()
             cursor.execute("""
@@ -57,6 +61,7 @@ def signup():
             else:
                 print("No Student found with that email. Cannot update the parent.")
 
+        # Teacher signup
         elif role == "teacher":
             phone = styled_input("Enter your phone number: ").strip()
             specialization = styled_input("Enter your specialization: ").strip()
@@ -77,6 +82,9 @@ def signup():
             #update the students with this class have NULL instructor
             cursor.execute("""UPDATE students SET instructor_id = %s
                            WHERE student_level = %s AND instructor_id IS NULL""", (new_instructor_id, level))
+
+        # Student signup
+        # This is where we get the parent_id and instructor_id
         elif role == "student":
             parent_email = styled_input("Enter your parent's email: ").strip()
             instructor_email = styled_input("Enter your instructor's email: ").strip()
