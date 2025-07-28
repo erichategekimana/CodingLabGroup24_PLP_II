@@ -1,10 +1,30 @@
 # login.py
 import bcrypt
+import re
 from db import get_connection
 from effects import type_print, loading_spinner, styled_input
 
 # Function to verify login credentials based on user role
 # and redirect to the appropriate dashboard
+
+def is_valid_email(email):
+    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
+
+def get_valid_email():
+    while True:
+        email = styled_input("Enter your email: ").strip()
+        if not is_valid_email(email):
+            print("Invalid email format. Please try again.")
+        else:
+            return email
+
+def get_non_empty_input(prompt):
+    while True:
+        value = styled_input(prompt).strip()
+        if not value:
+            print("Input cannot be empty. Please try again.")
+        else:
+            return value
 
 def verify_login(role):
     loading_spinner("Initialising")
@@ -21,8 +41,8 @@ def verify_login(role):
         return
     loading_spinner("Loading")
     cursor = conn.cursor()
-    email = styled_input("Enter your email: ").strip()
-    password = styled_input("Enter your password: ").encode("utf-8")
+    email = get_valid_email()
+    password = get_non_empty_input("Enter your password: ").encode("utf-8")
 
     # Role-based login logic
 

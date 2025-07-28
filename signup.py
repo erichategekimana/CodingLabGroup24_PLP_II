@@ -1,11 +1,55 @@
 # Connecting to the database and importing needed libraries
 import bcrypt
+import re
 from db import get_connection
 from effects import type_print, loading_spinner, styled_input
 from login import login
 
 # Function to handle Dashboard functionality
 # Signup function to register new users
+def is_valid_email(email):
+    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
+
+def get_valid_email():
+    while True:
+        email = styled_input("Enter your email: ").strip()
+        if not is_valid_email(email):
+            print("Invalid email format. Please try again.")
+        else:
+            return email
+
+def get_valid_child_email():
+    while True:
+        email = styled_input("Enter your child's email: ").strip()
+        if not is_valid_email(email):
+            print("Invalid email format. Please try again.")
+        else:
+            return email
+
+def get_valid_instructor_email():
+    while True:
+        email = styled_input("Enter your instructor's email: ").strip()
+        if not is_valid_email(email):
+            print("Invalid email format. Please try again.")
+        else:
+            return email
+
+def get_valid_parent_email():
+    while True:
+        email = styled_input("Enter your parent's email: ").strip()
+        if not is_valid_email(email):
+            print("Invalid email format. Please try again.")
+        else:
+            return email
+
+def get_non_empty_input(prompt):
+    while True:
+        val = styled_input(prompt).strip()
+        if not val:
+            print("Input cannot be empty. Please try again.")
+        else:
+            return val
+
 def signup():
     loading_spinner("Initialising")
     welcome = input("Press Enter to continue:")
@@ -22,10 +66,10 @@ def signup():
 
     cursor = conn.cursor()
     loading_spinner("Loading")
-    role = styled_input("Are you signing up as a Teacher, Student or Parent? ").strip().lower()
-    name = styled_input("Enter your full name: ").strip()
-    email = styled_input("Enter your email: ").strip()
-    password = styled_input("Enter your password: ").encode("utf-8")
+    role = get_non_empty_input("Are you signing up as a Teacher, Student or Parent? ").strip().lower()
+    name = get_non_empty_input("Enter your full name: ")
+    email = get_valid_email()
+    password = get_non_empty_input("Enter your password: ").encode("utf-8")
     #phone = input("Enter your phone number: ").strip()
 
     hashed_password = bcrypt.hashpw(password, bcrypt.gensalt()).decode('utf-8')
@@ -35,7 +79,7 @@ def signup():
     try:
         # Parent signup
         if role == "parent":
-            phone = styled_input("Enter your phone number: ").strip()
+            phone = get_non_empty_input("Enter your phone number: ").strip()
             cursor.execute("""
                 INSERT INTO parents (parent_name, password, parent_email, parent_phone)
                 VALUES (%s, %s, %s, %s)
@@ -46,7 +90,7 @@ def signup():
             #fetch parent_id of the newly inserted parent
             cursor.execute("SELECT parent_id FROM parents WHERE parent_email = %s", (email,))
             new_parent_id = cursor.fetchone()[0]
-            child_email = styled_input("Enter your child's email to link your accout: ").strip()
+            child_email = get_valid_child_email()
 
             cursor.execute("""UPDATE students SET parent_id = %s
                            WHERE student_email = %s AND parent_id IS NULL""", (new_parent_id, child_email))
@@ -63,8 +107,8 @@ def signup():
 
         # Teacher signup
         elif role == "teacher":
-            phone = styled_input("Enter your phone number: ").strip()
-            specialization = styled_input("Enter your specialization: ").strip()
+            phone = get_non_empty_input("Enter your phone number: ").strip()
+            specialization = get_non_empty_input("Enter your specialization: ").strip()
             cursor.execute("""
                 INSERT INTO instructors (instructor_name, password, instructor_email, instructor_phone, specialization)
                 VALUES (%s, %s, %s, %s, %s)
@@ -77,7 +121,7 @@ def signup():
             new_instructor_id = cursor.fetchone()[0]
 
             #ask teacher what class they're teaching
-            level = styled_input("What class/level are you teaching? ").strip()
+            level = get_non_empty_input("What class/level are you teaching? ").strip()
 
             #update the students with this class have NULL instructor
             cursor.execute("""UPDATE students SET instructor_id = %s
@@ -86,8 +130,8 @@ def signup():
         # Student signup
         # This is where we get the parent_id and instructor_id
         elif role == "student":
-            parent_email = styled_input("Enter your parent's email: ").strip()
-            instructor_email = styled_input("Enter your instructor's email: ").strip()
+            parent_email = get_valid_parent_email()
+            instructor_email = get_valid_instructor_email()
 
             # Get Parent_id
             cursor.execute("SELECT parent_id FROM parents WHERE parent_email = %s", (parent_email,))
@@ -104,7 +148,7 @@ def signup():
                 print("Instructor email not found.")
                 return"""
             instructor_id = instructor_result[0] if instructor_result else None
-            student_level = styled_input("Enter your level/class: ").strip()
+            student_level = get_non_empty_input("Enter your level/class: ").strip()
 
             cursor.execute("""
                 INSERT INTO students (student_names, student_email, password, parent_id, instructor_id, student_level)
