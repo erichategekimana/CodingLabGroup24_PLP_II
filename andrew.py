@@ -54,7 +54,7 @@ def view_my_progress(student_id, student_names, student_email):
             print("No progress records found.\n")
             return
 
-        print("\n--- {student_names}'s Progress ---")
+        print(f"\n--- {student_names}'s Progress ---")
         for subject, grade, timestamp in records:
             advice = "Needs Help" if grade < 50 else "Doing Well"
             print(f"Subject : {subject}")

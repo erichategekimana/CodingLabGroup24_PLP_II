@@ -9,11 +9,11 @@ def signup():
     loading_spinner("Initialising")
     welcome = input("Press Enter to continue:")
     if welcome == '':
-        type_print("==========================================================================="
+        print("==========================================================================="
             "\nWELCOME TO OUR STUDENT PROGRESS TRACKER APP😁"
             "\n==========================================================================="
             "\nSIGNUP TO CONTINUE TO OUR APP✍"
-            "\n===========================================================================", delay=0.019)
+            "\n===========================================================================")
     conn = get_connection()
     if not conn:
         type_print("Database connection failed.")
@@ -46,6 +46,16 @@ def signup():
 
             cursor.execute("""UPDATE students SET parent_id = %s
                            WHERE student_email = %s AND parent_id IS NULL""", (new_parent_id, child_email))
+
+            cursor.execute("SELECT student_id FROM students WHERE student_email = %s", (child_email,))
+            student_id = cursor.fetchone()
+
+            if student_id:
+                cursor.execute("""UPDATE parents SET student_id = %s
+                               WHERE parent_id = %s""", (student_id[0], new_parent_id))
+                conn.commit()
+            else:
+                print("No Student found with that email. Cannot update the parent.")
 
         elif role == "teacher":
             phone = styled_input("Enter your phone number: ").strip()
@@ -99,8 +109,8 @@ def signup():
         conn.commit()
         loading_spinner("Please Wait")
         type_print(f"{role.capitalize()} signed up successfully!")
-        type_print("==========================================================================="
-              "\n🙏🏿THANK YOU FOR REGISTERING TO OUR STUDENT PROGRESS TRACKER APP🙏🏿"
+        print("==========================================================================="
+              "\n🙏🏿THANK YOU FOR LOGGING INTO OUR STUDENT PROGRESS TRACKER APP🙏🏿"
               "\n===========================================================================")
         choose = styled_input("Do you want to proceed to log in? yes/no😁: ").lower().strip()
         if choose == 'yes':

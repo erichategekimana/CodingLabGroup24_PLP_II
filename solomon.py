@@ -118,18 +118,18 @@ def view_records(instructor_id):
             type_print("\nNo records found.")
             return
 # Print all records
-        type_print("\n--- All Records ---")
-        type_print("\n" + "=" * 110)
-        type_print(" Student Grades Overview".center(110))
-        type_print("=" * 110)
-        type_print(f"{'Student Name': <25} {'Email':<30} {'Subject':<20} {'Term':<10} {'Status':<10}")
-        type_print("-" * 110)
+        print("\n--- All Records ---")
+        print("\n" + "=" * 110)
+        print(" Student Grades Overview".center(110))
+        print("=" * 110)
+        print(f"{'Student Name': <25} {'Email':<30} {'Subject':<20} {'Term':<10} {'Grades':<8} {'Status':<10}")
+        print("-" * 110)
         for name, email, subject, term, grade, status in records:
-            type_print(f"{name:<25} {email:<30} {subject:<20} {term:<10} {str(grade) + '%':<8} {status:<10}")
-        type_print("=" * 110)
+            print(f"{name:<25} {email:<30} {subject:<20} {term:<10} {str(grade) + '%':<8} {status:<10}")
+        print("=" * 110)
 
     except mysql.connector.Error as err:
-        type_print(f"Error viewing records: {err}")
+        print(f"Error viewing records: {err}")
     finally:
         cursor.close()
         conn.close()
@@ -162,26 +162,35 @@ def progress_report(instructor_id):
         if not averages:
             type_print("\nNo subject averages available.")
             return
-        type_print("\n" + "=" * 110)
-        type_print("Progress Report".center(110))
-        type_print("\n" + "=" * 110)
-        type_print(f"{'Student':<30} {'Subject':<50} {'Score':<10} {'Status':<20}")
-        type_print("-" * 110)
+        print("\n" + "=" * 110)
+        print("Progress Report".center(110))
+        print("\n" + "=" * 110)
+        print(f"{'Student':<30} {'Subject':<40} {'Score':<10} {'Status':<20}")
+        print("-" * 110)
         for name, subject, score in data:
             status = "🟢 Excellent" if score >= 70 else "🔴 Needs Help"
-            type_print(f"{name:<30} {subject:<40} {str(score) + '%':<10} {status:<20}")
+            print(f"{name:<30} {subject:<40} {str(score) + '%':<10} {status:<20}")
 
-        type_print("\n" + "=" * 110)
-        type_print("Subject Averages".center(110))
-        type_print("-" * 110)
+        print("\n" + "=" * 110)
+        print("Subject Averages".center(110))
+        print("-" * 110)
         for subject, avg in averages:
-            type_print(f"{subject:<50}: {avg:.1f}%")
+            print(f"{subject:<50}: {avg:.1f}%")
     except mysql.connector.Error as err:
-        type_print(f"Error generating progress report: {err}")
+        print(f"Error generating progress report: {err}")
     finally:
         cursor.close()
         conn.close()
 # Search parent and send message
+from db import get_connection
+from effects import styled_input, type_print
+import mysql.connector
+from rich import print as console_print
+from rich.console import Console
+
+console = Console()
+
+
 def search_message_parent(instructor_id):
     type_print("\n--- Send Message to Parent ---")
     student_name = styled_input("Enter Student's Name: ").strip()
@@ -193,7 +202,7 @@ def search_message_parent(instructor_id):
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Get student ID
+        # Get student ID and parent ID
         cursor.execute("SELECT student_id, parent_id FROM students WHERE student_names = %s", (student_name,))
         student_data = cursor.fetchone()
         if not student_data:
@@ -228,29 +237,136 @@ def search_message_parent(instructor_id):
     except mysql.connector.Error as err:
         type_print(f"Error sending message: {err}")
 
-def view_parent_responses():
-    # Check if there are any parent responses to view
+
+def view_parent_instructor_messages(parent_id, instructor_id, instructor_name):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM parent_responses ORDER BY date DESC')
-        responses = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT sender_type, contents, timestamp FROM messages
+            WHERE (sender_type = 'parent' AND sender_id = %s AND receiver_type = 'instructor' AND receiver_id = %s)
+               OR (sender_type = 'instructor' AND sender_id = %s AND receiver_type = 'parent' AND receiver_id = %s)
+            ORDER BY timestamp ASC
+        """, (parent_id, instructor_id, instructor_id, parent_id))
+        messages = cursor.fetchall()
+
+        if not messages:
+            console.print("💬 No previous messages yet.\n")
+        else:
+            console.print("\n[bold green]--- Message History ---[/bold green]")
+            for sender_type, contents, timestamp in messages:
+                sender = "🧑‍🏫 Instructor" if sender_type == 'instructor' else "👪 Parent"
+                console.print(f"[{timestamp}] [bold]{sender}:[/bold] {contents}")
+
         cursor.close()
         conn.close()
-        # Check if there are any responses
-        if not responses:
-            type_print("\nNo parent responses yet.")
+
+    except mysql.connector.Error as err:
+        type_print(f"Error retrieving messages: {err}")
+
+
+def send_message_from_parent(parent_id, instructor_id, student_id, instructor_name):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        message = styled_input(f"Write a new message to {instructor_name} (or type 'cancel'): ").strip()
+        if message.lower() == 'cancel' or not message:
+            type_print("Message canceled or empty.")
             return
 
-        type_print("\n--- Parent Responses ---")
-        for row in responses:
-            type_print(f"{row[1]} responded on {row[3]}: {row[2]}")
+        cursor.execute("""
+            INSERT INTO messages (
+                sender_type, sender_id,
+                receiver_type, receiver_id,
+                student_id, contents
+            ) VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            'parent', parent_id,
+            'instructor', instructor_id,
+            student_id, message
+        ))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        type_print("Message sent to instructor.")
+
     except mysql.connector.Error as err:
-        type_print(f"Error viewing parent responses: {err}")
-        return
+        type_print(f"Error sending message: {err}")
+
+
+def view_parent_responses(instructor_id):
+    type_print("\n--- View Parent Responses ---")
+
+    #instructor_id = 1  # You can replace this with dynamic ID in future
+    parent_email = styled_input("Enter Parent Email: ").strip()
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Get parent and student details
+        cursor.execute("""
+            SELECT p.parent_id, s.student_id, s.student_names
+            FROM parents p
+            JOIN students s ON p.student_id = s.student_id
+            WHERE p.parent_email = %s
+        """, (parent_email,))
+        result = cursor.fetchone()
+
+        if not result:
+            type_print("Parent or linked student not found.")
+            return
+
+        parent_id, student_id, student_name = result
+        instructor_name = "Instructor"  # You can replace with dynamic name
+
+        view_parent_instructor_messages(parent_id, instructor_id, instructor_name)
+
+        send = styled_input("Do you want to reply to this parent? (yes/no): ").strip().lower()
+        if send == "yes":
+            send_message_from_parent(parent_id, instructor_id, student_id, instructor_name)
+
+        cursor.close()
+        conn.close()
+
+    except mysql.connector.Error as err:
+        type_print(f"Error handling parent messages: {err}")
+
+def login_instructor():
+    type_print("\n--- Instructor Login ---")
+    email = styled_input("Email: ")
+    password = styled_input("Password: ").encode("utf-8")
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT instructor_id, instructor_password, instructor_name FROM instructors WHERE instructor_email = %s", (email,))
+        result = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if result:
+            instructor_id, hashed_pw, instructor_name = result
+            if bcrypt.checkpw(password, hashed_pw.encode('utf-8')):
+                type_print(f"\nWelcome back, {instructor_name}!")
+                return instructor_id, instructor_name
+            else:
+                type_print("❌ Incorrect password.")
+        else:
+            type_print("❌ Instructor not found.")
+
+    except mysql.connector.Error as err:
+        type_print(f"Login error: {err}")
+
+    return None, None
+
+
 # Teacher dashboard for managing student records and communication
-def teacher_dashboard():
-    instructor_id = 1
+def teacher_dashboard(instructor_id, instructor_name):
+    #instructor_id = 1
     # Initialize database
     create_tables()
     type_print("\nWelcome to the Teacher Dashboard!")
@@ -258,7 +374,7 @@ def teacher_dashboard():
     while True:
         type_print("\n" + "="*35)
         type_print(" TEACHER DASHBOARD - ADMIN MENU")
-        type_print("="*35)
+        print("="*35)
         type_print("1. Add New Student Record")
         type_print("2. View All Records")
         type_print("3. Generate Progress Report")
@@ -276,7 +392,7 @@ def teacher_dashboard():
         elif choice == "4":
             search_message_parent(instructor_id)
         elif choice == "5":
-            view_parent_responses()
+            view_parent_responses(instructor_id)
         elif choice == "6":
             type_print("Logging out...")
             break

@@ -8,7 +8,7 @@ def verify_login(role):
     conn = get_connection()
     welcome = styled_input("Press Enter to continue:")
     if welcome == '':
-        type_print("==========================================================================="
+        print("==========================================================================="
               "\nWELCOME TO OUR STUDENT PROGRESS TRACKER APP😁"
               "\n==========================================================================="
               "\nLOGIN TO CONTINUE TO OUR APP✍"
@@ -39,24 +39,24 @@ def verify_login(role):
             with open("session.txt", "w") as f:
                 f.write(f"{role.capitalize()} name: {user[1]}")
             type_print(f"😁{role.capitalize()} logged in successfully!😁")
-            type_print("==========================================================================="
+            print("==========================================================================="
                   "\n🙏🏿THANK YOU FOR REGISTERING TO OUR STUDENT PROGRESS TRACKER APP🙏🏿"
                   "\n===========================================================================")
             if role == "teacher":
-                from solomon import main as teacher_dashboard
-                teacher_dashboard()
+                from solomon import teacher_dashboard
+                teacher_dashboard(user[0], user[1])
             elif role == "student":
                 from andrew import student_dashboard
                 student_dashboard(user[0], user[1], user[2])
             elif role == "parent":
-                from ange import main as parent_dashboard
-                parent_dashboard()
+                from ange import dashboard
+                dashboard(user[0])
             #main()
         else:
             type_print("❌Incorrect email or password❌.")
 
     except Exception as e:
-        type_print("❌Login failed:", e,"❌")
+        type_print(f"❌Login failed:, {e} ❌")
 
     finally:
         cursor.close()
