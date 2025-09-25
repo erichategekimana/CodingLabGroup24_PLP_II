@@ -69,4 +69,11 @@ The app uses **MySQL** with the following tables:
 
 1. Clone the repository:  
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/erichategekimana/CodingLabGroup24_PLP_II
+
+
+
+
+
+
+
