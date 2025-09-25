@@ -2,7 +2,7 @@
 
 # Student Progress Tracker
 
-A web-based application for tracking student progress, designed for schools. The app allows instructors, parents, and students to manage, monitor, and communicate about student performance efficiently.
+A CLI based application for tracking student progress, designed for schools. The app allows instructors, parents, and students to manage, monitor, and communicate about student performance efficiently.
 
 ---
 
